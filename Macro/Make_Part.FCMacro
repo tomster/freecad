@@ -24,9 +24,9 @@ class p:
         self.close()
 
     def _make_body(self, name, width, length, height):
-        sketch_name = "%s_sketch" % name
         App.ActiveDocument.addObject("PartDesign::Body", name)
         body = App.ActiveDocument.getObject(name)
+        sketch_name = "%s_sketch" % name
         body.newObjectAt(
             "Sketcher::SketchObject",
             sketch_name,
@@ -69,6 +69,8 @@ class p:
         )
         sketch.addGeometry(geoList, False)
         conList = []
+        # create undimensioned constraints
+        # (like you would roughly clicking the sketch in the GUI)
         conList.append(Sketcher.Constraint("Coincident", 0, 2, 1, 1))
         conList.append(Sketcher.Constraint("Coincident", 1, 2, 2, 1))
         conList.append(Sketcher.Constraint("Coincident", 2, 2, 3, 1))
@@ -77,30 +79,28 @@ class p:
         conList.append(Sketcher.Constraint("Horizontal", 2))
         conList.append(Sketcher.Constraint("Vertical", 1))
         conList.append(Sketcher.Constraint("Vertical", 3))
+        conList.append(Sketcher.Constraint("Symmetric", 1, 2, 0, 1, -1, 1))
         sketch.addConstraint(conList)
 
-        App.ActiveDocument.recompute()
-
         pad_name = "%s_pad" % name
+        body.newObjectAt(
+            "PartDesign::Pad", pad_name, FreeCADGui.Selection.getSelection()
+        )
         pad = App.ActiveDocument.getObject(pad_name)
         pad.Profile = App.ActiveDocument.getObject(
             sketch_name
         )
 
-        body.newObjectAt(
-            "PartDesign::Pad", pad_name, FreeCADGui.Selection.getSelection()
-        )
         self.dimension_body(sketch, pad, width, length, height)
         pad.Length = height
         sketch.Visibility = False
-        App.ActiveDocument.recompute()
         Gui.ActiveDocument.setEdit(
             App.ActiveDocument.getObject(name), 0, "%s." % pad_name
         )
         App.ActiveDocument.recompute()
 
     def dimension_body(self, sketch, pad, width, length, height):
-        sketch.addConstraint(Sketcher.Constraint("Symmetric", 1, 2, 0, 1, -1, 1))
+        # apply dimensional constraints
         sketch.addConstraint(Sketcher.Constraint("DistanceX", 0, 1, 0, 2, 52.455330))
         sketch.setDatum(9, App.Units.Quantity("%s mm" % width))
         sketch.addConstraint(Sketcher.Constraint("DistanceY", 3, 1, 3, 2, 33.686350))
@@ -123,24 +123,24 @@ class p:
         self.dialog.resize(240, 100)
 
         self.dialog.setWindowTitle("Create part")
-        la = QtGui.QVBoxLayout(self.dialog)
+        layout = QtGui.QVBoxLayout(self.dialog)
 
         name = QtGui.QLabel("Name")
-        la.addWidget(name)
+        layout.addWidget(name)
         self.d_name = QtGui.QLineEdit()
-        la.addWidget(self.d_name)
+        layout.addWidget(self.d_name)
 
         width = QtGui.QLabel("Width")
-        la.addWidget(width)
-        self.d_width = QtGui.QuantitySpinBox()
-        la.addWidget(self.d_width)
+        layout.addWidget(width)
+        self.d_width = Gui.UiLoader().createWidget('Gui::QuantitySpinBox')
+        layout.addWidget(self.d_width)
 
         okbox = QtGui.QDialogButtonBox(self.dialog)
         okbox.setOrientation(QtCore.Qt.Horizontal)
         okbox.setStandardButtons(
             QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
         )
-        la.addWidget(okbox)
+        layout.addWidget(okbox)
         QtCore.QObject.connect(okbox, QtCore.SIGNAL("accepted()"), self.Part)
         QtCore.QObject.connect(okbox, QtCore.SIGNAL("rejected()"), self.close)
         QtCore.QMetaObject.connectSlotsByName(self.dialog)
