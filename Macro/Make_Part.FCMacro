@@ -22,8 +22,7 @@ class p:
             # get inputs from dialog
             self.name = name = self.d_name.text()
             body = self._make_body(name)
-            assembly = self._make_assembly(name)
-            assembly.ViewObject.dropObject(body, None, '', [])
+            self._make_assembly(name, body)
 
         except Exception as exc:
             FreeCAD.Console.PrintError("Ooops: %s" % exc)
@@ -32,10 +31,24 @@ class p:
     def size_part(self):
         pass
 
-    def _make_assembly(self, name):
+    def _make_assembly(self, name, part):
         self.assembly = assembly = asm3.assembly.Assembly.make(
             App.ActiveDocument, name
         )
+        assembly.ViewObject.dropObject(part, None, '', [])
+        faces = [
+            ("Face1", "rear"),
+            ("Face2", "right"),
+            ("Face3", "front"),
+            ("Face4", "left"),
+            ("Face5", "bottom"),
+            ("Face6", "top"),
+        ]
+        for face, name in faces:
+            Gui.Selection.clearSelection()
+            selection = Gui.Selection.addSelection(self.pad, face)
+            asm3.assembly.AsmElement.make(selection, name)
+
         return assembly
 
     def _make_body(self, name):
@@ -100,7 +113,7 @@ class p:
         conList.append(Sketcher.Constraint("DistanceY", 3, 1, 3, 2, 30.0))
         sketch.addConstraint(conList)
 
-        pad_name = "%s_pad" % name
+        self.pad_name = pad_name = "%s_pad" % name
         body.newObjectAt(
             "PartDesign::Pad", pad_name, FreeCADGui.Selection.getSelection()
         )
