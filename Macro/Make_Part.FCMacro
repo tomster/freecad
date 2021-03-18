@@ -151,11 +151,8 @@ class p:
 
     def dimension_body(self):
         # apply dimensional constraints
-        self.sketch.ExpressionEngine.append(
-            (
-                ".Constraints[9]",
-                self.template.ExpressionEngine[0][1],
-            )
+        self.sketch.setExpression(
+            ".Constraints[9]", self.template.ExpressionEngine[0][1]
         )
         # sketch.setDatum(9, App.Units.Quantity("%s mm" % width))
         # sketch.setDatum(10, App.Units.Quantity("%f mm" % length))
