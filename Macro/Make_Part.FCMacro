@@ -7,15 +7,24 @@ import FreeCAD as App
 import FreeCADGui
 import FreeCADGui as Gui
 from PySide import QtGui, QtCore
+import freecad.asm3 as asm3
 
 
 class p:
+
+    name = None
+    assembly = None
+    body = None
+
     def CreatePart(self):
 
         try:
             # get inputs from dialog
-            name = self.d_name.text()
-            self._make_body(name)
+            self.name = name = self.d_name.text()
+            body = self._make_body(name)
+            assembly = self._make_assembly(name)
+            assembly.ViewObject.dropObject(body, None, '', [])
+
         except Exception as exc:
             FreeCAD.Console.PrintError("Ooops: %s" % exc)
         self.close()
@@ -23,9 +32,16 @@ class p:
     def SizePart(self):
         pass
 
+    def _make_assembly(self, name):
+        self.assembly = assembly = asm3.assembly.Assembly.make(
+            App.ActiveDocument, name
+        )
+        return assembly
+
     def _make_body(self, name):
-        App.ActiveDocument.addObject("PartDesign::Body", name)
-        self.body = body = App.ActiveDocument.getObject(name)
+        body_name = "%s_body" % name
+        App.ActiveDocument.addObject("PartDesign::Body", body_name)
+        self.body = body = App.ActiveDocument.getObject(body_name)
         sketch_name = "%s_sketch" % name
         body.newObjectAt(
             "Sketcher::SketchObject",
@@ -95,6 +111,7 @@ class p:
         #     App.ActiveDocument.getObject(name), 0, "%s." % pad_name
         # )
         App.ActiveDocument.recompute()
+        return self.body
 
     def dimension_body(self, sketch, pad, width, length, height):
         # apply dimensional constraints
