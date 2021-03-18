@@ -35,7 +35,10 @@ class p:
         self.assembly = assembly = asm3.assembly.Assembly.make(
             App.ActiveDocument, name
         )
+        # add the part to the assembly:
         assembly.ViewObject.dropObject(part, None, '', [])
+
+        # create named elements from each face:
         faces = [
             ("Face1", "rear"),
             ("Face2", "right"),
@@ -44,11 +47,12 @@ class p:
             ("Face5", "bottom"),
             ("Face6", "top"),
         ]
-        for face, name in faces:
+        for face, fname in faces:
             Gui.Selection.clearSelection()
             selection = Gui.Selection.addSelection(self.pad, face)
-            asm3.assembly.AsmElement.make(selection, name)
+            asm3.assembly.AsmElement.make(selection, "%s_%s" % (name, fname))
 
+        Gui.Selection.clearSelection()
         return assembly
 
     def _make_body(self, name):
