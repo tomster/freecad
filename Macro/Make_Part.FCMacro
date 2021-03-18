@@ -16,7 +16,7 @@ class p:
     assembly = None
     body = None
 
-    def CreatePart(self):
+    def create_part(self):
 
         try:
             # get inputs from dialog
@@ -29,7 +29,7 @@ class p:
             FreeCAD.Console.PrintError("Ooops: %s" % exc)
         self.close()
 
-    def SizePart(self):
+    def size_part(self):
         pass
 
     def _make_assembly(self, name):
@@ -148,7 +148,7 @@ class p:
             QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
         )
         layout.addWidget(okbox)
-        QtCore.QObject.connect(okbox, QtCore.SIGNAL("accepted()"), self.CreatePart)
+        QtCore.QObject.connect(okbox, QtCore.SIGNAL("accepted()"), self.create_part)
         QtCore.QObject.connect(okbox, QtCore.SIGNAL("rejected()"), self.close)
         QtCore.QMetaObject.connectSlotsByName(self.dialog)
 
