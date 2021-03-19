@@ -22,6 +22,9 @@ class PartTemplate:
                 obj.addProperty("App::PropertyQuantity", property)
             except Exception:
                 pass
+            # make sure we have an expression ready for the property
+            if obj.getExpression(property) is None:
+                obj.setExpression(property, '10 mm')
 
 
 class p:
