@@ -64,6 +64,8 @@ class p:
             body = self._make_body(name)
             self.group.ViewObject.dropObject(self._make_assembly(name, body))
             self.dimension_body()
+            App.ActiveDocument.recompute()
+            Gui.SendMsgToActiveView("ViewFit")
 
         except Exception as exc:
             FreeCAD.Console.PrintError("Ooops: %s" % exc)
@@ -109,7 +111,6 @@ class p:
         sketch.MapReversed = False
         sketch.MapPathParameter = 0.000000
         sketch.MapMode = "FlatFace"
-        App.ActiveDocument.recompute()
         geoList = []
         geoList.append(
             Part.LineSegment(
