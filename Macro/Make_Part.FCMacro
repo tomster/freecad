@@ -13,13 +13,15 @@ import freecad.asm3 as asm3
 class PartTemplate:
 
     name = "PartFactory"
+    properties = ["Width", "Length", "Height"]
 
     def __init__(self, obj):
         obj.Proxy = self
-        try:
-            obj.addProperty("App::PropertyQuantity", "Width")
-        except Exception:
-            pass
+        for property in self.properties:
+            try:
+                obj.addProperty("App::PropertyQuantity", property)
+            except Exception:
+                pass
 
 
 class p:
@@ -27,6 +29,8 @@ class p:
     name = None
     assembly = None
     body = None
+    pad = None
+    sketch = None
 
     def _make_template(self, recreate=False):
         if recreate:
@@ -34,6 +38,7 @@ class p:
                 App.ActiveDocument.removeObject(PartTemplate.name)
             except Exception:
                 pass
+        if App.ActiveDocument.getObject(PartTemplate.name) is None:
             App.ActiveDocument.addObject("App::FeaturePython", PartTemplate.name)
         self.template = obj = App.ActiveDocument.getObject(PartTemplate.name)
         PartTemplate(obj)
@@ -51,9 +56,6 @@ class p:
         except Exception as exc:
             FreeCAD.Console.PrintError("Ooops: %s" % exc)
         self.close()
-
-    def size_part(self):
-        pass
 
     def _make_assembly(self, name, part):
         self.assembly = assembly = asm3.assembly.Assembly.make(App.ActiveDocument, name)
@@ -150,44 +152,44 @@ class p:
         return self.body
 
     def dimension_body(self):
-        # apply dimensional constraints
+        # width:
         self.sketch.setExpression(
-            ".Constraints[9]", self.template.ExpressionEngine[0][1]
+            ".Constraints[9]", self.template.ExpressionEngine[2][1]
         )
-        # sketch.setDatum(9, App.Units.Quantity("%s mm" % width))
-        # sketch.setDatum(10, App.Units.Quantity("%f mm" % length))
-        # pad = self.pad
-        # pad.Length = height
-        # pad.Length2 = 100.000000
-        # pad.UseCustomVector = 0
-        # pad.Direction = (1, 1, 1)
-        # pad.Type = 0
-        # pad.UpToFace = None
-        # pad.Reversed = 0
-        # pad.Midplane = 0
-        # pad.Offset = 0
+        # length:
+        self.sketch.setExpression(
+            ".Constraints[10]", self.template.ExpressionEngine[1][1]
+        )
+        # height:
+        pad = self.pad
+        pad.Type = 0  # -> Length
+        pad.setExpression("Length", self.template.ExpressionEngine[0][1])
+        pad.Midplane = 1
 
     def close(self):
         self.dialog.hide()
 
     def _make_creation_dialog(self):
-        self.dialog = QtGui.QDialog()
-        self.dialog.resize(240, 100)
+        dialog = QtGui.QDialog()
+        dialog.resize(240, 100)
 
-        self.dialog.setWindowTitle("Create part")
-        layout = QtGui.QVBoxLayout(self.dialog)
+        dialog.setWindowTitle("Create part")
+        layout = QtGui.QVBoxLayout(dialog)
 
         name = QtGui.QLabel("Name")
         layout.addWidget(name)
-        self.d_name = QtGui.QLineEdit()
-        layout.addWidget(self.d_name)
+        self.d_name = d_name = QtGui.QLineEdit()
+        layout.addWidget(d_name)
 
-        self.d_width = Gui.UiLoader().createWidget("Gui::QuantitySpinBox")
-        self.d_width.setProperty("unit", "mm")
-        Gui.ExpressionBinding(self.d_width).bind(self.template, "Width")
-        layout.addWidget(self.d_width)
+        for property in PartTemplate.properties:
+            label = QtGui.QLabel(property)
+            layout.addWidget(label)
+            widget = Gui.UiLoader().createWidget("Gui::QuantitySpinBox")
+            widget.setProperty("unit", "mm")
+            Gui.ExpressionBinding(widget).bind(self.template, property)
+            layout.addWidget(widget)
 
-        okbox = QtGui.QDialogButtonBox(self.dialog)
+        okbox = QtGui.QDialogButtonBox(dialog)
         okbox.setOrientation(QtCore.Qt.Horizontal)
         okbox.setStandardButtons(
             QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
@@ -195,46 +197,14 @@ class p:
         layout.addWidget(okbox)
         QtCore.QObject.connect(okbox, QtCore.SIGNAL("accepted()"), self.create_part)
         QtCore.QObject.connect(okbox, QtCore.SIGNAL("rejected()"), self.close)
-        QtCore.QMetaObject.connectSlotsByName(self.dialog)
-
-    def _make_dimension_dialog(self):
-        self.dimension_dialog = QtGui.QDialog()
-        self.dimension_dialog.resize(240, 200)
-
-        self.dimension_dialog.setWindowTitle("Dimension part")
-        layout = QtGui.QVBoxLayout(self.dimension_dialog)
-
-        width = QtGui.QLabel("Width")
-        layout.addWidget(width)
-        self.d_width = Gui.UiLoader().createWidget("Gui::QuantitySpinBox")
-        self.d_width.setProperty("unit", "mm")
-        layout.addWidget(self.d_width)
-        Gui.ExpressionBinding(self.d_width).bind(self.sketch.Constraints[-2], "Value")
-
-        okbox = QtGui.QDialogButtonBox(self.dimension_dialog)
-        okbox.setOrientation(QtCore.Qt.Horizontal)
-        okbox.setStandardButtons(
-            QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
-        )
-        layout.addWidget(okbox)
-        QtCore.QObject.connect(okbox, QtCore.SIGNAL("accepted()"), self.SizePart)
-        QtCore.QObject.connect(
-            okbox, QtCore.SIGNAL("rejected()"), self.close_dimension_dialog
-        )
-        QtCore.QMetaObject.connectSlotsByName(self.dimension_dialog)
-
-    def close_dimension_dialog(self):
-        self.dimension_dialog.hide()
+        QtCore.QMetaObject.connectSlotsByName(dialog)
+        return dialog
 
     def __init__(self):
         self._make_template(recreate=False)
-        self._make_creation_dialog()
+        self.dialog = self._make_creation_dialog()
         self.dialog.show()
         self.dialog.exec_()
-        # we now should have a named body with sketch and padding
-        # self._make_dimension_dialog()
-        # self.dimension_dialog.show()
-        # self.dimension_dialog.exec_()
 
 
 p()
