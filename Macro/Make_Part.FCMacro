@@ -171,7 +171,7 @@ class p:
     def close(self):
         self.dialog.hide()
 
-    def _make_creation_dialog(self):
+    def _make_dialog(self):
         dialog = QtGui.QDialog()
         dialog.resize(240, 100)
 
@@ -204,7 +204,7 @@ class p:
 
     def __init__(self):
         self._make_template(recreate=False)
-        self.dialog = self._make_creation_dialog()
+        self.dialog = self._make_dialog()
         self.dialog.show()
         self.dialog.exec_()
 
