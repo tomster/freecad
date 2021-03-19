@@ -98,7 +98,6 @@ class p:
             App.Rotation(0.0000000000, 0.0000000000, 0.0000000000),
         )
         sketch.MapReversed = False
-        sketch.Support = [(App.ActiveDocument.getObject("XY_Plane"), "")]
         sketch.MapPathParameter = 0.000000
         sketch.MapMode = "FlatFace"
         App.ActiveDocument.recompute()
