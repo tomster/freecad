@@ -13,6 +13,7 @@ import freecad.asm3 as asm3
 class PartTemplate:
 
     name = "PartFactory"
+    groupname = "Components"
     properties = ["Width", "Length", "Height"]
 
     def __init__(self, obj):
@@ -34,15 +35,23 @@ class p:
     body = None
     pad = None
     sketch = None
+    group = None
+    template = None
 
     def _make_template(self, recreate=False):
         if recreate:
             try:
                 App.ActiveDocument.removeObject(PartTemplate.name)
+                App.ActiveDocument.removeObject(PartTemplate.groupname)
             except Exception:
                 pass
+        if App.ActiveDocument.getObject(PartTemplate.groupname) is None:
+            App.ActiveDocument.addObject("App::LinkGroup", PartTemplate.groupname)
+        self.group = group = App.ActiveDocument.getObject(PartTemplate.groupname)
+        self.template = obj = App.ActiveDocument.getObject(PartTemplate.name)
         if App.ActiveDocument.getObject(PartTemplate.name) is None:
-            App.ActiveDocument.addObject("App::FeaturePython", PartTemplate.name)
+            obj = App.ActiveDocument.addObject("App::FeaturePython", PartTemplate.name)
+            group.ViewObject.dropObject(obj)
         self.template = obj = App.ActiveDocument.getObject(PartTemplate.name)
         PartTemplate(obj)
         self.template.ViewObject.Proxy = 0
@@ -53,7 +62,7 @@ class p:
             # get inputs from dialog
             self.name = name = self.d_name.text()
             body = self._make_body(name)
-            self._make_assembly(name, body)
+            self.group.ViewObject.dropObject(self._make_assembly(name, body))
             self.dimension_body()
 
         except Exception as exc:
